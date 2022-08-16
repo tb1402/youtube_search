@@ -24,9 +24,9 @@ class YoutubeSearch:
     def _parse_html(self, response):
         results = []
         start = (
-            response.index("ytInitialData")
-            + len("ytInitialData")
-            + 3
+                response.index("ytInitialData")
+                + len("ytInitialData")
+                + 3
         )
         end = response.index("};", start) + 1
         json_str = response[start:end]
@@ -38,7 +38,7 @@ class YoutubeSearch:
                 if "videoRenderer" in video.keys():
                     video_data = video.get("videoRenderer", {})
                     res["id"] = video_data.get("videoId", None)
-                    res["thumbnails"] = [thumb.get("url", None) for thumb in video_data.get("thumbnail", {}).get("thumbnails", [{}]) ]
+                    res["thumbnails"] = [thumb.get("url", None) for thumb in video_data.get("thumbnail", {}).get("thumbnails", [{}])]
                     res["title"] = video_data.get("title", {}).get("runs", [[{}]])[0].get("text", None)
                     res["long_desc"] = video_data.get("descriptionSnippet", {}).get("runs", [{}])[0].get("text", None)
                     res["channel"] = video_data.get("longBylineText", {}).get("runs", [[{}]])[0].get("text", None)
@@ -46,6 +46,17 @@ class YoutubeSearch:
                     res["views"] = video_data.get("viewCountText", {}).get("simpleText", 0)
                     res["publish_time"] = video_data.get("publishedTimeText", {}).get("simpleText", 0)
                     res["url_suffix"] = video_data.get("navigationEndpoint", {}).get("commandMetadata", {}).get("webCommandMetadata", {}).get("url", None)
+
+                    official_artist = False
+                    if "ownerBadges" in video_data:
+                        badges = video_data.get("ownerBadges", {})
+                        for badge in badges:
+                            if "metadataBadgeRenderer" in badge:
+                                if "style" in badge["metadataBadgeRenderer"] and badge["metadataBadgeRenderer"]["style"] == "BADGE_STYLE_TYPE_VERIFIED_ARTIST":
+                                    official_artist = True
+                                    break
+                    res["official_artist"] = official_artist if official_artist else "- Topic" in res["channel"]
+
                     results.append(res)
 
             if results:
